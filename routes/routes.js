@@ -1,6 +1,6 @@
-// create the Express app
+// create the Express router
 const express = require('express');
-const app = express();
+const router = express.Router();
 
 const Sequelize = require('sequelize');
 
@@ -10,20 +10,23 @@ const { check, validationResult } = require('express-validator');
 
 //Body-parser
 const bodyParser = require('body-parser');
-app.use(bodyParser.json());
+router.use(bodyParser.json());
 
 //load bcryptjs package to encrypt and decrypt password values
 const bcrypt = require('bcryptjs');
 
 //Sequelize DB object typical way to get Sequelize DB object
-app.set('models', require('../models'));
+//router.set('models', require('../models'));
 
+const User = require('../models').User;
+const Course = require('../models').Course;
 //USER ROUTES
 //Send a GET request to /api/users to show users
 //Returns HTTP: Status Code 200 means OK
-app.get('/api/users', (req, res) => {
-    res.status(200);
-    res.json('{}');
+router.get('/users',async (req, res) => {
+    const userData = await User.findAll()
+    //res.status(200);
+    res.json(userData);
     //res.json(data);
 });
 
@@ -31,7 +34,7 @@ app.get('/api/users', (req, res) => {
 //Send a POST request to /api/users to create a user
 //Returns HTTP: Status Code 201 means Created
 //in the event of a validation error returns a 400 error means Bad Request
-app.post('/api/users', (req, res, next) => {
+router.post('/users', (req, res, next) => {
     const user = req.body;
 
     const errors = [];
@@ -55,7 +58,7 @@ app.post('/api/users', (req, res, next) => {
     }
     else {
         user.password = bcrypt.hashSync(user.password, 8);
-        const User = app.get('models').User;
+        const User = router.get('models').User;
 
         User.create(user)
             .then(() => {
@@ -72,10 +75,10 @@ app.post('/api/users', (req, res, next) => {
 //COURSE ROUTES
 //Send a GET request to /api/courses to list courses
 //Returns HTTP: Status Code 200 means OK
-app.get('/api/courses', (req, res) => {
+router.get('/courses', (req, res) => {
 
-    const Course = app.get('models').Course;
-    const User = app.get('models').User;
+    const Course = router.get('models').Course;
+    const User = router.get('models').User;
     //get list of courses
     Course.findAll({
         order: [
@@ -94,9 +97,9 @@ app.get('/api/courses', (req, res) => {
 //COURSE ROUTES
 //Send a GET request to /api/courses/:id to show course
 //Returns HTTP: Status Code 200 means OK  
-app.get('/api/courses/:id', (req, res) => {
-    const Course = app.get('models').Course;
-    const User = app.get('models').User;
+router.get('/courses/:id', (req, res) => {
+    const Course = router.get('models').Course;
+    const User = router.get('models').User;
     Course.findByPk(req.params.id, {
         include: [
             { model: User, as: 'user' }
@@ -123,7 +126,7 @@ app.get('/api/courses/:id', (req, res) => {
 //COURSE ROUTES
 //Send a POST request to /api/courses to create courses
 //Returns HTTP: Status Code 201 means Created
-app.post('/api/courses', (req, res, next) => {
+router.post('/courses', (req, res, next) => {
     const course = req.body;
 
     const errors = [];
@@ -142,7 +145,7 @@ app.post('/api/courses', (req, res, next) => {
     else {
         //create the course
         //set HTTP header to the URI for the course
-        const Course = app.get('models').Course;
+        const Course = router.get('models').Course;
 
         Course.create(course)
             .then((course) => {
@@ -163,7 +166,7 @@ app.post('/api/courses', (req, res, next) => {
 //Send a PUT request to /api/courses/:id to update courses
 //Returns HTTP: Status Code 204 means No Content
 
-app.put('/api/courses/:id', (req, res) => {
+router.put('/courses/:id', (req, res) => {
     const course = req.body;
 
     const errors = [];
@@ -180,7 +183,7 @@ app.put('/api/courses/:id', (req, res) => {
         res.json(errors);
     }
     else {
-        const Course = app.get('models').Course;
+        const Course = router.get('models').Course;
 
         //Update the course at ID :id
 
@@ -202,9 +205,9 @@ app.put('/api/courses/:id', (req, res) => {
 
 //COURSE ROUTES
 //Send a DELETE request to /api/courses/:id to delete courses
-app.delete('/api/courses/:id', (req, res) => {
+router.delete('/courses/:id', (req, res) => {
     //delete the course at ID :id - check if it exists first
-    const Course = app.get('models').Course;
+    const Course = router.get('models').Course;
 
 
     Course.findByPk(req.params.id).then((foundCourse) => {
@@ -231,7 +234,7 @@ app.delete('/api/courses/:id', (req, res) => {
 });
 
 // setup a friendly greeting for the root route
-app.get('/', (req, res) => {
+router.get('/', (req, res) => {
     const sql = new Sequelize({
         dialect: 'sqlite',
         storage: 'fsjstd-restapi.db'
@@ -251,14 +254,14 @@ app.get('/', (req, res) => {
 });
 
 // send 404 if no other route matched
-app.use((req, res, next) => {
+router.use((req, res, next) => {
     res.status(404).json({
         message: 'Route Not Found',
     });
 });
 
 // setup a global error handler
-app.use((err, req, res, next) => {
+router.use((err, req, res, next) => {
     if (enableGlobalErrorLogging) {
         console.error(`Global error handler: ${JSON.stringify(err.stack)}`);
     }
@@ -269,4 +272,4 @@ app.use((err, req, res, next) => {
     });
 });
 
-module.exports = app;
+module.exports = router;

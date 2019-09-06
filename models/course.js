@@ -1,4 +1,4 @@
-'use strict';
+ 'use strict';
 module.exports = (sequelize, DataTypes) => {
     const Course = sequelize.define('Course', {
         id: {
@@ -32,5 +32,7 @@ module.exports = (sequelize, DataTypes) => {
             },
         }); //auto-generate userId in Course linking to User model
     };
+
+    module.exports = Course;
     return Course;
 };

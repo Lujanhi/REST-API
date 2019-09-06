@@ -1,5 +1,6 @@
 // create the Express app
 const express = require('express');
+
 const app = express();
 
 const Sequelize = require('sequelize');
@@ -8,9 +9,12 @@ const enableGlobalErrorLogging = false;
 
 const { check, validationResult } = require('express-validator');
 
+const route = require('./routes/routes');
+
+app.use('/api', route)
 //Body-parser
-const bodyParser = require('body-parser');
-app.use(bodyParser.json());
+//const bodyParser = require('body-parser');
+app.use(express.json());
 
 //load bcryptjs package to encrypt and decrypt password values
 const bcrypt = require('bcryptjs');
@@ -279,4 +283,11 @@ app.use((err, req, res, next) => {
   });
 });
 
+// set our port
+app.set('port', process.env.PORT || 5000);
+
+// start listening on our port
+const server = app.listen(app.get('port'), () => {
+  console.log(`Express server is listening on port ${server.address().port}`);
+});
 module.exports = app;
