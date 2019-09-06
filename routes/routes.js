@@ -23,7 +23,7 @@ const Course = require('../models').Course;
 //USER ROUTES
 //Send a GET request to /api/users to show users
 //Returns HTTP: Status Code 200 means OK
-router.get('/users',async (req, res) => {
+router.get('/users', async(req, res) => {
     const userData = await User.findAll()
     //res.status(200);
     res.json(userData);
