@@ -34,7 +34,9 @@ router.get('/users', async(req, res) => {
 //Send a POST request to /api/users to create a user
 //Returns HTTP: Status Code 201 means Created
 //in the event of a validation error returns a 400 error means Bad Request
-router.post('/users', (req, res, next) => {
+
+
+router.post('/api/user', (req, res, next) => {
     const user = req.body;
 
     const errors = [];
@@ -70,7 +72,7 @@ router.post('/users', (req, res, next) => {
                 next(new Error(err));
             });
     }
-});
+}); 
 
 //COURSE ROUTES
 //Send a GET request to /api/courses to list courses
