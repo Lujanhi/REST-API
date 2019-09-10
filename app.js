@@ -22,14 +22,14 @@ const bcrypt = require('bcryptjs');
 //Sequelize DB object typical way to get Sequelize DB object
 app.set('models', require('./models'));
 
-//USER ROUTES
+/* //USER ROUTES
   //Send a GET request to /api/users to show users
   //Returns HTTP: Status Code 200 means OK
-app.get('/api/users', (req, res) => {
+ app.get('/api/users', (req, res) => {
     res.status(200);
     res.json('{}');
     //res.json(data);
-});
+}); 
 
 //USER ROUTES
   //Send a POST request to /api/users to create a user
@@ -262,7 +262,7 @@ const test = sql.authenticate()
 res.json({
   message: 'Welcome to the REST API project!',
 });
-});
+}); */
 
 // send 404 if no other route matched
 app.use((req, res, next) => {

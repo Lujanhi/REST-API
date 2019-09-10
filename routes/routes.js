@@ -23,7 +23,7 @@ const Course = require('../models').Course;
 //USER ROUTES
 //Send a GET request to /api/users to show users
 //Returns HTTP: Status Code 200 means OK
-router.get('/users', async(req, res) => {
+router.get('/users', async (req, res) => {
     const userData = await User.findAll()
     //res.status(200);
     res.json(userData);
@@ -36,7 +36,7 @@ router.get('/users', async(req, res) => {
 //in the event of a validation error returns a 400 error means Bad Request
 
 
-router.post('/api/user', (req, res, next) => {
+router.post('/users', (req, res, next) => {
     const user = req.body;
 
     const errors = [];
@@ -60,7 +60,7 @@ router.post('/api/user', (req, res, next) => {
     }
     else {
         user.password = bcrypt.hashSync(user.password, 8);
-        const User = router.get('models').User;
+        const User = require('../models').User;
 
         User.create(user)
             .then(() => {
@@ -69,18 +69,22 @@ router.post('/api/user', (req, res, next) => {
                 res.send();
             })
             .catch((err) => {
-                next(new Error(err));
+                if (err.name === "SequelizeUniqueConstraintError") {
+                        res.json(err.errors)
+                } else { next(new Error(err)); }
+                
+                
             });
     }
-}); 
+});
 
 //COURSE ROUTES
 //Send a GET request to /api/courses to list courses
 //Returns HTTP: Status Code 200 means OK
 router.get('/courses', (req, res) => {
 
-    const Course = router.get('models').Course;
-    const User = router.get('models').User;
+    const Course = require('../models').Course;
+    const User = require('../models').User;
     //get list of courses
     Course.findAll({
         order: [
@@ -100,8 +104,8 @@ router.get('/courses', (req, res) => {
 //Send a GET request to /api/courses/:id to show course
 //Returns HTTP: Status Code 200 means OK  
 router.get('/courses/:id', (req, res) => {
-    const Course = router.get('models').Course;
-    const User = router.get('models').User;
+    const Course = require('../models').Course;
+    const User = require('../models').User;
     Course.findByPk(req.params.id, {
         include: [
             { model: User, as: 'user' }
@@ -147,7 +151,7 @@ router.post('/courses', (req, res, next) => {
     else {
         //create the course
         //set HTTP header to the URI for the course
-        const Course = router.get('models').Course;
+        const Course = require('../models').Course;
 
         Course.create(course)
             .then((course) => {
