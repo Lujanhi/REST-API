@@ -22,7 +22,7 @@ module.exports = (sequelize, DataTypes) => {
 
     }, {});
 
-    //Relationship between the Courses and Users tables is defined (linking tables)
+    
     Course.associate = function (models) {
         Course.belongsTo(models.User, {
             as: 'user',
@@ -30,7 +30,7 @@ module.exports = (sequelize, DataTypes) => {
                 fieldName: 'userId',
                 allowNull: false,
             },
-        }); //auto-generate userId in Course linking to User model
+        });
     };
 
     module.exports = Course;

@@ -1,28 +1,15 @@
-// create the Express router
 const express = require('express');
 const router = express.Router();
-
 const Sequelize = require('sequelize');
-
 const enableGlobalErrorLogging = false;
-
 const { check, validationResult } = require('express-validator');
-
 const auth = require('basic-auth');
-
-//Body-parser
 const bodyParser = require('body-parser');
 router.use(bodyParser.json());
-
-//load bcryptjs package to encrypt and decrypt password values
 const bcrypt = require('bcryptjs');
-
-//Sequelize DB object typical way to get Sequelize DB object
-//router.set('models', require('../models'));
 
 const User = require('../models').User;
 const Course = require('../models').Course;
-
 
 //User authentication middleware
 const authenticateUser = async (req, res, next) => {
@@ -77,24 +64,19 @@ const authenticateUser = async (req, res, next) => {
     }
 }
 
-
-
-
-
 //USER ROUTES
-//Send a GET request to /api/users to show users
-//Returns HTTP: Status Code 200 means OK
+// GET request to /api/users 
+//Returns HTTP: Status Code 200 means 
 router.get('/users', authenticateUser, async (req, res) => {
     const userData = await User.findByPk(req.body.id,)
-    //res.status(200);
     res.json(userData);
-    //res.json(data);
 });
 
 //USER ROUTES
-//Send a POST request to /api/users to create a user
-//Returns HTTP: Status Code 201 means Created
-//in the event of a validation error returns a 400 error means Bad Request
+//POST request to /api/users ---- create a user
+//Returns HTTP--- Status Code 201 
+
+//if validation is wrong then returns a 400 error  ---- Bad Request
 
 
 router.post('/users', (req, res, next) => {
@@ -140,12 +122,14 @@ router.post('/users', (req, res, next) => {
 });
 
 //COURSE ROUTES
-//Send a GET request to /api/courses to list courses
-//Returns HTTP: Status Code 200 means OK
+// GET request to /api/courses to list courses
+//Returns HTTP---- Status Code 200 
 router.get('/courses', (req, res) => {
 
     const Course = require('../models').Course;
     const User = require('../models').User;
+    
+    
     //get list of courses
     Course.findAll({
         order: [
@@ -162,8 +146,8 @@ router.get('/courses', (req, res) => {
 });
 
 //COURSE ROUTES
-//Send a GET request to /api/courses/:id to show course
-//Returns HTTP: Status Code 200 means OK  
+//GET request to /api/courses/:id to show course
+//Returns HTTP--- Status Code 200 
 router.get('/courses/:id', (req, res) => {
     const Course = require('../models').Course;
     const User = require('../models').User;
@@ -191,8 +175,8 @@ router.get('/courses/:id', (req, res) => {
 });
 
 //COURSE ROUTES
-//Send a POST request to /api/courses to create courses
-//Returns HTTP: Status Code 201 means Created
+// POST request to /api/courses to create courses
+//Returns HTTP----- Status Code 201 
 router.post('/courses', authenticateUser, async (req, res, next) => {
     try {
 
@@ -212,11 +196,7 @@ router.post('/courses', authenticateUser, async (req, res, next) => {
             res.json(errors);
         }
         else {
-            //create the course
-            //set HTTP header to the URI for the course
-            //const Course = require('../models').Course;
-
-            //course.userId = req.body.id;
+            
 
             const newCourse = await Course.create(course)
             res.location(`/api/courses/${newCourse.id}`)
@@ -231,8 +211,8 @@ router.post('/courses', authenticateUser, async (req, res, next) => {
 });
 
 //COURSE ROUTES
-//Send a PUT request to /api/courses/:id to update courses
-//Returns HTTP: Status Code 204 means No Content
+// PUT request to /api/courses/:id to update courses
+//Returns HTTP---- Status Code 204 
 
 router.put('/courses/:id', authenticateUser, async (req, res, next) => {
     const course = req.body;
@@ -252,10 +232,6 @@ router.put('/courses/:id', authenticateUser, async (req, res, next) => {
     }
     else {
 
-        //Update the course at ID :id
-
-        //TODO: check if ID exists, exception if not
-
         await Course.update(req.body,
             {
                 where: { id: req.params.id }
@@ -271,9 +247,9 @@ router.put('/courses/:id', authenticateUser, async (req, res, next) => {
 });
 
 //COURSE ROUTES
-//Send a DELETE request to /api/courses/:id to delete courses
+// DELETE request to /api/courses/:id to delete courses
 router.delete('/courses/:id', authenticateUser, async (req, res, next) => {
-    //delete the course at ID :id - check if it exists first
+    //delete the course at ID ---- id, check if it exists first
 
     try {
         const deleteCourse = await Course.findByPk(req.params.id)
@@ -314,14 +290,14 @@ router.get('/', (req, res) => {
     });
 });
 
-// send 404 if no other route matched
+// send 404 if other route do not match
 router.use((req, res, next) => {
     res.status(404).json({
         message: 'Route Not Found',
     });
 });
 
-// setup a global error handler
+// global error handler
 router.use((err, req, res, next) => {
     if (enableGlobalErrorLogging) {
         console.error(`Global error handler: ${JSON.stringify(err.stack)}`);
