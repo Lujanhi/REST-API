@@ -8,6 +8,8 @@ const enableGlobalErrorLogging = false;
 
 const { check, validationResult } = require('express-validator');
 
+const auth = require('basic-auth');
+
 //Body-parser
 const bodyParser = require('body-parser');
 router.use(bodyParser.json());
@@ -20,11 +22,70 @@ const bcrypt = require('bcryptjs');
 
 const User = require('../models').User;
 const Course = require('../models').Course;
+
+
+//User authentication middleware
+const authenticateUser = async (req, res, next) => {
+    let message;
+    // Parse the user's credentials from the Authorization header.
+    const credentials = auth(req);
+    if (credentials) {
+        //Find user with matching email address
+        const user = await User.findOne({
+            raw: true,
+            where: {
+                emailAddress: credentials.name,
+            },
+        });
+        //If user matches email
+        if (user) {
+            // Use the bcryptjs npm package to compare the user's password
+            // (from the Authorization header) to the user's password
+            // that was retrieved from the data store.
+            const authenticated = bcrypt.compareSync(credentials.pass, user.password);
+            //If password matches
+            if (authenticated) {
+                console.log(`Authentication successful for user: ${user.firstName} ${user.lastName}`);
+                if (req.originalUrl.includes('courses')) {
+                    //If route has a courses endpoint, set request userId to matched user id
+                    req.body.userId = user.id;
+                } else if (req.originalUrl.includes('users')) {
+                    //If route has a users endpoint, set request id to matched user id
+                    req.body.id = user.id;
+                }
+            } else {
+                //Otherwise the Authentication failed
+                message = `Authentication failed for user: ${user.firstName} ${user.lastName}`;
+            }
+        } else {
+            // No email matching the Authorization header
+            message = `User not found for email address: ${credentials.name}`;
+        }
+    } else {
+        //No user credentials/authorization header available
+        message = 'Authorization header not found';
+    }
+    // Deny Access if there is anything stored in message
+    if (message) {
+        console.warn(message);
+        const err = new Error('Access Denied');
+        err.status = 401;
+        next(err);
+    } else {
+        //User authenticated
+        next();
+    }
+}
+
+
+
+
+
 //USER ROUTES
 //Send a GET request to /api/users to show users
 //Returns HTTP: Status Code 200 means OK
-router.get('/users', async (req, res) => {
-    const userData = await User.findAll()
+router.get('/users', authenticateUser, async (req, res) => {
+    const userData = await User.findByPk(req.body.id,)
     //res.status(200);
     res.json(userData);
     //res.json(data);
@@ -70,10 +131,10 @@ router.post('/users', (req, res, next) => {
             })
             .catch((err) => {
                 if (err.name === "SequelizeUniqueConstraintError") {
-                        res.json(err.errors)
+                    res.json(err.errors)
                 } else { next(new Error(err)); }
-                
-                
+
+
             });
     }
 });
@@ -88,7 +149,7 @@ router.get('/courses', (req, res) => {
     //get list of courses
     Course.findAll({
         order: [
-            ['title', 'ASC'],
+            ['id', 'ASC'],
         ],
         include: [
             { model: User, as: 'user' }
@@ -132,7 +193,7 @@ router.get('/courses/:id', (req, res) => {
 //COURSE ROUTES
 //Send a POST request to /api/courses to create courses
 //Returns HTTP: Status Code 201 means Created
-router.post('/courses', async (req, res, next) => {
+router.post('/courses', authenticateUser, async (req, res, next) => {
     try {
 
         const course = req.body;
@@ -154,7 +215,7 @@ router.post('/courses', async (req, res, next) => {
             //create the course
             //set HTTP header to the URI for the course
             //const Course = require('../models').Course;
-        
+
             //course.userId = req.body.id;
 
             const newCourse = await Course.create(course)
@@ -166,14 +227,14 @@ router.post('/courses', async (req, res, next) => {
         next(err)
     }
 
-    
+
 });
 
 //COURSE ROUTES
 //Send a PUT request to /api/courses/:id to update courses
 //Returns HTTP: Status Code 204 means No Content
 
-router.put('/courses/:id', (req, res) => {
+router.put('/courses/:id', authenticateUser, async (req, res, next) => {
     const course = req.body;
 
     const errors = [];
@@ -190,13 +251,12 @@ router.put('/courses/:id', (req, res) => {
         res.json(errors);
     }
     else {
-        const Course = router.get('models').Course;
 
         //Update the course at ID :id
 
         //TODO: check if ID exists, exception if not
 
-        Course.update(req.body,
+        await Course.update(req.body,
             {
                 where: { id: req.params.id }
             })
@@ -204,39 +264,33 @@ router.put('/courses/:id', (req, res) => {
                 res.status(204);
                 res.send();
             })
-            .catch((err) => {
-                next(new Error(err));
-            });
+            .catch(err)
+        console.log("500 internal server error")
+        next(err)
     }
 });
 
 //COURSE ROUTES
 //Send a DELETE request to /api/courses/:id to delete courses
-router.delete('/courses/:id', (req, res) => {
+router.delete('/courses/:id', authenticateUser, async (req, res, next) => {
     //delete the course at ID :id - check if it exists first
-    const Course = router.get('models').Course;
+
+    try {
+        const deleteCourse = await Course.findByPk(req.params.id)
+
+        if (deleteCourse.userId === req.body.userId) {
+            await deleteCourse.destroy()
+            res.status(204).end()
+        } else {
+            res.status(403);
+            res.json({ "message": "forbidden you dont have permission" });
+        }
+    } catch (err) {
+        console.log("500 internal server error")
+        next(err)
+    }
 
 
-    Course.findByPk(req.params.id).then((foundCourse) => {
-        if (foundCourse) {
-            Course.destroy({
-                where: { id: req.params.id }
-            }).then(() => {
-                res.status(204);
-                res.send();
-            })
-                .catch((err) => {
-                    next(new Error(err));
-                });
-        }
-        else {
-            res.status(404);
-            res.json({ "message": "Course not found for ID " + req.params.id });
-        }
-    })
-        .catch((err) => {
-            next(new Error(err));
-        });
 
 });
 
