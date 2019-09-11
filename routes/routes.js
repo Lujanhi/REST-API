@@ -132,40 +132,41 @@ router.get('/courses/:id', (req, res) => {
 //COURSE ROUTES
 //Send a POST request to /api/courses to create courses
 //Returns HTTP: Status Code 201 means Created
-router.post('/courses', (req, res, next) => {
-    const course = req.body;
+router.post('/courses', async (req, res, next) => {
+    try {
 
-    const errors = [];
+        const course = req.body;
 
-    if (!course.title) {
-        errors.push('Please provide a value for "title"');
-    }
-    if (!course.description) {
-        errors.push('Please provide a value for "description"');
+        const errors = [];
+
+        if (!course.title) {
+            errors.push('Please provide a value for "title"');
+        }
+        if (!course.description) {
+            errors.push('Please provide a value for "description"');
+        }
+
+        if (errors.length != 0) {
+            res.status(400);
+            res.json(errors);
+        }
+        else {
+            //create the course
+            //set HTTP header to the URI for the course
+            //const Course = require('../models').Course;
+        
+            //course.userId = req.body.id;
+
+            const newCourse = await Course.create(course)
+            res.location(`/api/courses/${newCourse.id}`)
+            res.status(201).end()
+        }
+    } catch (err) {
+        console.log("500 internal server error")
+        next(err)
     }
 
-    if (errors.length != 0) {
-        res.status(400);
-        res.json(errors);
-    }
-    else {
-        //create the course
-        //set HTTP header to the URI for the course
-        const Course = require('../models').Course;
-
-        Course.create(course)
-            .then((course) => {
-                const fullUrl = req.protocol + '://' + req.get('host') + "/api/course/" + course.id;
-                res.set('Location', fullUrl);
-            })
-            .then(() => {
-                res.status(201);
-                res.send();
-            })
-            .catch((err) => {
-                next(new Error(err));
-            });
-    }
+    
 });
 
 //COURSE ROUTES
